@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EmoBench-UA — Emotion Detection in Ukrainian</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ua-blue: #005BBB;
+      --ua-yellow: #FFD500;
+      --bg: #0a0c10;
+      --bg2: #10131a;
+      --card: #13161f;
+      --border: rgba(255,213,0,0.15);
+      --text: #e8e8e8;
+      --muted: #7a7f8e;
+      --accent: #FFD500;
+      --accent2: #4a9eff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,91,187,0.35) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(255,213,0,0.12) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .flag-stripe {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--ua-blue) 50%, var(--ua-yellow) 50%);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid rgba(255,213,0,0.4);
+      color: var(--ua-yellow);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.9rem;
+      border-radius: 2px;
+      margin-bottom: 2rem;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 900;
+      font-size: clamp(3rem, 8vw, 7rem);
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      animation: fadeUp 0.7s 0.1s ease both;
+    }
+
+    .hero-title .emo { color: var(--ua-yellow); }
+    .hero-title .ua {
+      color: var(--ua-blue);
+      -webkit-text-stroke: 1px rgba(0,91,187,0.5);
+      text-shadow: 0 0 60px rgba(0,91,187,0.6);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--muted);
+      max-width: 640px;
+      margin: 1.5rem auto 0;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+      margin-top: 2.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      animation: fadeUp 0.7s 0.3s ease both;
+    }
+
+    .hero-meta span { display: flex; align-items: center; gap: 0.4rem; }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2.5rem;
+      animation: fadeUp 0.7s 0.4s ease both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.6rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--ua-yellow);
+      color: #000;
+      font-weight: 500;
+    }
+    .btn-primary:hover { background: #ffe94d; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,213,0,0.3); }
+
+    .btn-outline {
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--text);
+    }
+    .btn-outline:hover { border-color: rgba(255,255,255,0.5); transform: translateY(-2px); }
+
+    .btn-blue {
+      border: 1px solid rgba(0,91,187,0.5);
+      color: var(--accent2);
+    }
+    .btn-blue:hover { border-color: var(--accent2); background: rgba(74,158,255,0.08); transform: translateY(-2px); }
+
+    /* ── EMOTIONS GRID ── */
+    .emotions-strip {
+      display: flex;
+      gap: 0;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.7s 0.5s ease both;
+    }
+
+    .emo-chip {
+      flex: 1;
+      text-align: center;
+      padding: 1.1rem 0.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-right: 1px solid var(--border);
+      transition: background 0.2s;
+      position: relative;
+      cursor: default;
+    }
+    .emo-chip:last-child { border-right: none; }
+    .emo-chip:hover { background: rgba(255,255,255,0.04); }
+
+    .emo-chip .emoji { display: block; font-size: 1.4rem; margin-bottom: 0.3rem; }
+    .emo-chip .label { color: var(--muted); }
+
+    /* ── SECTIONS ── */
+    section { padding: 6rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+    .section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ua-yellow);
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    p { color: #c0c4ce; margin-bottom: 1rem; }
+
+    /* ── STATS GRID ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    .stat-box {
+      background: var(--card);
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--ua-yellow);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    /* ── PIPELINE ── */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .pipe-step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 1.8rem;
+      border-radius: 2px;
+      position: relative;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .pipe-step:hover { border-color: rgba(255,213,0,0.4); transform: translateY(-3px); }
+
+    .pipe-num {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--ua-yellow);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.6rem;
+    }
+
+    .pipe-step h3 {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-weight: 500;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .pipe-step p { font-size: 0.84rem; color: var(--muted); margin: 0; }
+
+    /* ── EXAMPLES ── */
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .example-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1.5rem;
+      transition: border-color 0.2s;
+    }
+    .example-card:hover { border-color: rgba(255,213,0,0.35); }
+
+    .ex-ua {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.88rem;
+      color: #e8e8e8;
+      margin-bottom: 0.3rem;
+    }
+
+    .ex-en {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 0.8rem;
+    }
+
+    .ex-tag {
+      display: inline-block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 1px;
+    }
+
+    /* ── RESULTS TABLE ── */
+    .result-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.78rem;
+      margin-top: 2rem;
+    }
+
+    thead tr { border-bottom: 1px solid var(--border); }
+    th {
+      text-align: left;
+      padding: 0.8rem 1rem;
+      color: var(--ua-yellow);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+    }
+    td {
+      padding: 0.75rem 1rem;
+      color: #c0c4ce;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .best { color: var(--ua-yellow); font-weight: 500; }
+    .type-badge {
+      display: inline-block;
+      padding: 0.1rem 0.4rem;
+      border-radius: 1px;
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── RESOURCES ── */
+    .resources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .resource-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1.8rem;
+      text-decoration: none;
+      display: block;
+      transition: all 0.2s ease;
+    }
+    .resource-card:hover { border-color: rgba(255,213,0,0.5); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+
+    .resource-icon { font-size: 1.8rem; margin-bottom: 1rem; display: block; }
+    .resource-card h3 { font-size: 0.95rem; font-weight: 500; color: #e8e8e8; margin-bottom: 0.3rem; }
+    .resource-card p { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+    /* ── AUTHORS ── */
+    .authors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .author-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 1.8rem;
+    }
+
+    .author-card h3 { font-size: 1rem; font-weight: 500; color: #e8e8e8; }
+    .author-card .affil { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+    .author-card .email { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--accent2); margin-top: 0.5rem; }
+
+    /* ── CITATION ── */
+    .citation-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--ua-yellow);
+      padding: 1.5rem 2rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      line-height: 1.8;
+      color: #c0c4ce;
+      overflow-x: auto;
+      margin-top: 2rem;
+      border-radius: 0 2px 2px 0;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255,213,0,0.12);
+      border: 1px solid rgba(255,213,0,0.3);
+      color: var(--ua-yellow);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      border-radius: 1px;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(255,213,0,0.2); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    footer .flag-line { margin-bottom: 0.8rem; font-size: 1.2rem; }
+
+    /* ── ANIMATION ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── DIVIDER ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    /* emotion colors */
+    .joy    { background: rgba(255,213,0,0.12);  color: #FFD500; border-color: rgba(255,213,0,0.3); }
+    .anger  { background: rgba(255,80,80,0.1);   color: #ff6b6b; border-color: rgba(255,80,80,0.3); }
+    .fear   { background: rgba(160,80,220,0.1);  color: #b478f0; border-color: rgba(160,80,220,0.3); }
+    .sadness{ background: rgba(74,158,255,0.1);  color: #4a9eff; border-color: rgba(74,158,255,0.3); }
+    .disgust{ background: rgba(80,180,80,0.1);   color: #6dbc6d; border-color: rgba(80,180,80,0.3); }
+    .surprise{background: rgba(255,160,50,0.1);  color: #ffab40; border-color: rgba(255,160,50,0.3); }
+    .none   { background: rgba(120,130,150,0.1); color: #8a90a0; border-color: rgba(120,130,150,0.3); }
+
+    .type-linguistic { background: rgba(255,213,0,0.08); color: #FFD500; }
+    .type-transformer { background: rgba(74,158,255,0.08); color: #4a9eff; }
+    .type-llm { background: rgba(160,80,220,0.08); color: #b478f0; }
+
+    @media (max-width: 640px) {
+      .emotions-strip { display: grid; grid-template-columns: repeat(4,1fr); }
+      .emo-chip { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="flag-stripe"></div>
+
+  <div class="badge">
+    <span>🏛</span> EMNLP 2025 Findings &nbsp;·&nbsp; SemEval-2025 Task 11
+  </div>
+
+  <h1 class="hero-title">
+    <span class="emo">Emo</span>Bench<span class="ua">-UA</span>
+  </h1>
+
+  <p class="hero-sub">
+    The first manually annotated benchmark dataset for emotion detection in Ukrainian texts — covering 7 basic emotions, crowdsourced via Toloka.ai with high-confidence annotation.
+  </p>
+
+  <div class="hero-meta">
+    <span>📄 Dementieva, Babakov &amp; Fraser</span>
+    <span>🇺🇦 Ukrainian Language NLP</span>
+    <span>🔬 TUM · USC · MCML</span>
+  </div>
+
+  <div class="buttons">
+    <a class="btn btn-primary" href="https://arxiv.org/abs/2505.23297" target="_blank">
+      📄 Read the Paper
+    </a>
+    <a class="btn btn-blue" href="https://huggingface.co/collections/ukr-detect/ukrainian-emotions-classification" target="_blank">
+      🤗 Models &amp; Datasets
+    </a>
+    <a class="btn btn-outline" href="https://aclanthology.org/2025.findings-emnlp.107" target="_blank">
+      📚 ACL Anthology
+    </a>
+  </div>
+</section>
+
+<!-- EMOTIONS STRIP -->
+<div class="emotions-strip">
+  <div class="emo-chip"><span class="emoji">😄</span><span class="label">Joy</span></div>
+  <div class="emo-chip"><span class="emoji">😡</span><span class="label">Anger</span></div>
+  <div class="emo-chip"><span class="emoji">😨</span><span class="label">Fear</span></div>
+  <div class="emo-chip"><span class="emoji">😢</span><span class="label">Sadness</span></div>
+  <div class="emo-chip"><span class="emoji">🤢</span><span class="label">Disgust</span></div>
+  <div class="emo-chip"><span class="emoji">😲</span><span class="label">Surprise</span></div>
+  <div class="emo-chip"><span class="emoji">😐</span><span class="label">None</span></div>
+</div>
+
+<hr class="divider" />
+
+<!-- ABSTRACT -->
+<section class="reveal">
+  <div class="section-label">Overview</div>
+  <h2>A Benchmark for Ukrainian Emotion Detection</h2>
+  <p>
+    While Ukrainian NLP has seen progress across many text processing tasks — sentiment analysis, toxicity detection, NER — emotion classification remained an underexplored frontier with no publicly available benchmark. We fill this gap with <strong>EmoBench-UA</strong>.
+  </p>
+  <p>
+    The annotation schema follows Ekman's framework of basic emotions. Texts were sourced from Ukrainian tweets, filtered for quality, and annotated by crowdworkers on Toloka.ai with stringent quality controls — language proficiency tests, exam phases, and confidence-weighted majority voting via the Dawid-Skene model.
+  </p>
+  <p>
+    We evaluate a broad range of approaches: linguistic baselines, Transformer encoders (mBERT, XLM-RoBERTa, monolingual Ukrainian models), cross-lingual transfer, and modern LLMs — establishing the first comprehensive benchmark for this task.
+  </p>
+
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-num">4,949</div>
+      <div class="stat-label">Labeled Instances</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">7</div>
+      <div class="stat-label">Emotion Classes</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">5×</div>
+      <div class="stat-label">Annotators per Text</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">0.85</div>
+      <div class="stat-label">Krippendorff's α</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">≥90%</div>
+      <div class="stat-label">Confidence Threshold</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ANNOTATION PIPELINE -->
+<section class="reveal">
+  <div class="section-label">Methodology</div>
+  <h2>Annotation Pipeline</h2>
+  <p>A carefully designed crowdsourcing pipeline on <strong>Toloka.ai</strong>, split into two sequential projects to reduce annotator cognitive load and improve label quality.</p>
+
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="pipe-num">01 — DATA SELECTION</div>
+      <h3>Source &amp; Filtering</h3>
+      <p>Ukrainian tweets corpus filtered by length (5–49 words), toxicity score, and emotional content likelihood via translated English classifier.</p>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">02 — TWO-STAGE ANNOTATION</div>
+      <h3>Split Projects</h3>
+      <p>Project 1: Fear, Surprise, Disgust. Project 2: Anger, Joy, Sadness. Sequential design ensures multi-label coverage with lower cognitive load.</p>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">03 — QUALITY CONTROL</div>
+      <h3>Annotator Screening</h3>
+      <p>Ukrainian proficiency tests, training + exam phases, random control tasks, anti-fatigue breaks, and automated banning rules.</p>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-num">04 — AGGREGATION</div>
+      <h3>Dawid-Skene Voting</h3>
+      <p>5 annotators per instance. Final labels via confidence-weighted majority voting. Only instances with ≥90% confidence are retained.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- EXAMPLES -->
+<section class="reveal">
+  <div class="section-label">Dataset Examples</div>
+  <h2>Sample Annotations</h2>
+  <p>Ukrainian social media texts labelled with Ekman's basic emotions. Multi-label instances are supported.</p>
+
+  <div class="examples-grid">
+    <div class="example-card">
+      <div class="ex-ua">а я сьогодні біжу до щастя :)</div>
+      <div class="ex-en">and today I am running to happiness :)</div>
+      <span class="ex-tag joy">Joy</span>
+    </div>
+    <div class="example-card">
+      <div class="ex-ua">ти з мене іздіваєшся?!</div>
+      <div class="ex-en">Are you kidding me?!</div>
+      <span class="ex-tag anger">Anger</span>
+    </div>
+    <div class="example-card">
+      <div class="ex-ua">Шось мені ця арома кава не подобається, фу</div>
+      <div class="ex-en">I don't like this flavored coffee, ew</div>
+      <span class="ex-tag disgust">Disgust</span>
+    </div>
+    <div class="example-card">
+      <div class="ex-ua">такого ви ще не бачили!</div>
+      <div class="ex-en">you have never seen anything like it!</div>
+      <span class="ex-tag surprise">Surprise</span>
+    </div>
+    <div class="example-card">
+      <div class="ex-ua">Я скучила за цим місцем…</div>
+      <div class="ex-en">I missed this place...</div>
+      <span class="ex-tag sadness">Sadness</span>
+    </div>
+    <div class="example-card">
+      <div class="ex-ua">Починаю серйозно хвилюватись за котика.</div>
+      <div class="ex-en">I am starting to worry about the kitty.</div>
+      <span class="ex-tag fear">Fear</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- RESULTS -->
+<section class="reveal result-section" style="max-width: 100%; padding: 6rem 2rem;">
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <div class="section-label">Experimental Results</div>
+    <h2>Model Comparison</h2>
+    <p>We evaluate linguistic baselines, Transformer encoders, and large language models. Ukrainian-specific fine-tuned models achieve the best performance.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Type</th>
+          <th>F1 (macro)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Keywords Baseline</td><td><span class="type-badge type-linguistic">Linguistic</span></td><td>0.21</td></tr>
+        <tr><td>Logistic Regression (TF-IDF)</td><td><span class="type-badge type-linguistic">Linguistic</span></td><td>0.38</td></tr>
+        <tr><td>mBERT</td><td><span class="type-badge type-transformer">Transformer</span></td><td>0.46</td></tr>
+        <tr><td>XLM-RoBERTa base</td><td><span class="type-badge type-transformer">Transformer</span></td><td>0.51</td></tr>
+        <tr><td>XLM-RoBERTa large</td><td><span class="type-badge type-transformer">Transformer</span></td><td>0.55</td></tr>
+        <tr><td>Twitter-XLM-RoBERTa</td><td><span class="type-badge type-transformer">Transformer</span></td><td>0.54</td></tr>
+        <tr><td>EuroLLM</td><td><span class="type-badge type-llm">LLM</span></td><td>0.41</td></tr>
+        <tr><td>Llama 3.1</td><td><span class="type-badge type-llm">LLM</span></td><td>0.44</td></tr>
+        <tr><td class="best">ukr-emotions-classifier (ours)</td><td><span class="type-badge type-transformer">Fine-tuned</span></td><td class="best">0.61 ★</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 0.78rem; color: var(--muted); margin-top: 1rem; font-family: 'IBM Plex Mono', monospace;">
+      Note: Full results table with all model variants and per-emotion scores available in the paper.
+    </p>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- RESOURCES -->
+<section class="reveal">
+  <div class="section-label">Resources</div>
+  <h2>Open Data &amp; Models</h2>
+  <p>All resources are publicly released on Hugging Face under open licenses.</p>
+
+  <div class="resources-grid">
+    <a class="resource-card" href="https://huggingface.co/datasets/ukr-detect/ukr-emotions-binary" target="_blank">
+      <span class="resource-icon">📊</span>
+      <h3>ukr-emotions-binary</h3>
+      <p>Multi-label emotion annotations (binary presence/absence) for 4,949 Ukrainian texts. Train / Dev / Test splits.</p>
+    </a>
+    <a class="resource-card" href="https://huggingface.co/datasets/ukr-detect/ukr-emotions-intensity" target="_blank">
+      <span class="resource-icon">📈</span>
+      <h3>ukr-emotions-intensity</h3>
+      <p>Emotion annotations with perceived intensity levels (Low / Medium / High) collected from crowdworkers.</p>
+    </a>
+    <a class="resource-card" href="https://huggingface.co/datasets/ukr-detect/ukr-emotions-per-annotator" target="_blank">
+      <span class="resource-icon">🗂</span>
+      <h3>ukr-emotions-per-annotator</h3>
+      <p>Raw individual annotations from all 5 annotators per instance, enabling inter-annotator analysis.</p>
+    </a>
+    <a class="resource-card" href="https://huggingface.co/ukr-detect/ukr-emotions-classifier" target="_blank">
+      <span class="resource-icon">🤖</span>
+      <h3>ukr-emotions-classifier</h3>
+      <p>Best-performing fine-tuned classifier (0.6B) achieving state-of-the-art results on EmoBench-UA.</p>
+    </a>
+    <a class="resource-card" href="https://arxiv.org/abs/2505.23297" target="_blank">
+      <span class="resource-icon">📄</span>
+      <h3>arXiv Preprint</h3>
+      <p>Full paper with dataset statistics, annotation guidelines, ablation studies, and error analysis.</p>
+    </a>
+    <a class="resource-card" href="https://aclanthology.org/2025.findings-emnlp.107" target="_blank">
+      <span class="resource-icon">📚</span>
+      <h3>ACL Anthology</h3>
+      <p>Published in Findings of EMNLP 2025. Also featured in SemEval-2025 Task 11 (Ukrainian track).</p>
+    </a>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- AUTHORS -->
+<section class="reveal">
+  <div class="section-label">Authors</div>
+  <h2>Research Team</h2>
+
+  <div class="authors-grid">
+    <div class="author-card">
+      <h3>Daryna Dementieva</h3>
+      <div class="affil">TUM · MCML</div>
+      <div class="affil">Technical University of Munich</div>
+      <div class="affil">Munich Center for Machine Learning</div>
+      <div class="email">daryna.dementieva@tum.de</div>
+    </div>
+    <div class="author-card">
+      <h3>Nikolay Babakov</h3>
+      <div class="affil">USC</div>
+      <div class="affil">Universidade de Santiago de Compostela</div>
+      <div class="email">nikolay.babakov@usc.es</div>
+    </div>
+    <div class="author-card">
+      <h3>Alexander Fraser</h3>
+      <div class="affil">TUM · MCML · MDSI</div>
+      <div class="affil">Technical University of Munich</div>
+      <div class="affil">Munich Data Science Institute</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- CITATION -->
+<section class="reveal">
+  <div class="section-label">Citation</div>
+  <h2>Cite This Work</h2>
+  <p>If you use EmoBench-UA in your research, please cite our paper:</p>
+
+  <div class="citation-block" id="bib">
+<button class="copy-btn" onclick="copyBib()">COPY</button>@inproceedings{dementieva-etal-2025-emobench,
+    title     = "{E}mo{B}ench-{UA}: A Benchmark Dataset for 
+                  Emotion Detection in {U}krainian",
+    author    = "Dementieva, Daryna and 
+                 Babakov, Nikolay and 
+                 Fraser, Alexander",
+    booktitle = "Findings of the Association for 
+                 Computational Linguistics: EMNLP 2025",
+    year      = "2025",
+    pages     = "2025--2048",
+    url       = "https://aclanthology.org/2025.findings-emnlp.107"
+}</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="flag-line">🇺🇦</div>
+  EmoBench-UA &nbsp;·&nbsp; EMNLP 2025 Findings &nbsp;·&nbsp;
+  <a href="https://huggingface.co/collections/ukr-detect/ukrainian-emotions-classification" style="color: var(--ua-yellow); text-decoration: none;">Hugging Face Collection</a>
+  &nbsp;·&nbsp;
+  <a href="https://arxiv.org/abs/2505.23297" style="color: var(--ua-yellow); text-decoration: none;">arXiv:2505.23297</a>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Copy citation
+  function copyBib() {
+    const text = document.getElementById('bib').innerText.replace('COPY\n', '');
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'COPIED!';
+      setTimeout(() => btn.textContent = 'COPY', 2000);
+    });
+  }
+</script>
+</body>
+</html>
