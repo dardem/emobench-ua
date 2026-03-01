@@ -2,6 +2,8 @@
 
 by Daryna Dementieva, Nikolay Babakov, and Alexander Fraser
 
+🤗 Collection of Models and Datasets: [link](https://huggingface.co/collections/ukr-detect/ukrainian-emotions-classification)
+
 Citation:
 ```
 @inproceedings{dementieva-etal-2025-emobench,
